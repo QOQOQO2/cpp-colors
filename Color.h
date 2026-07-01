@@ -15,6 +15,7 @@
  TODO: add << support for the different colorspaces
  TODO: add a alpha channel
  TODO: change how you store the colors into linear srgb from 0 to 1 instead
+ TODO: add a operator-() function to invert the color
 
  NOTE: colorspaces to add:
   linear srgb (lsrgb)
