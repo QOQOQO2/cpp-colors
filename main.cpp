@@ -5,23 +5,25 @@ int main() {
   // Color test{300, 0, 0}; // This will throw a std::invalid_argument error
   Color color1, color2;
 
-  // std::cout uses rhs.getAnsiCode() << "#" << rhs.getHexColor() <<
-  // Color::resetAnsiCode.
-  //
-  // Calling getAnsiCode() returns the ansi escape code
-  // to color text.
-  //
-  // Calling getHexColor returns the color in the format
-  // "XXXXXX".
-  //
-  // Color::resetAnsiCode is a const where if you print it it will
-  // reset the terminal colors back to the default colors.
   std::cout << "Enter a color: #";
 
   // std::cin can take in "XXX", "#XXX", "XXXXXX", or "#XXXXXX"
   std::cin >> color1;
   std::cout << "Enter another color: #";
   std::cin >> color2;
+
+  // std::cout uses rhs.getAnsiCode() << "#" << rhs.getHexColor() <<
+  // Color::resetAnsiCode.
+  //
+  // Calling getAnsiCode() returns a std::string of the ansi escape code
+  // to color text.
+  //
+  // Calling getHexColor() returns a std::string of the color in the format
+  // "XXXXXX".
+  //
+  // Color::resetAnsiCode is a const std::string where if you print it it will
+  // reset the terminal colors back to the default colors.
+  std::cout << "You entered " << color1 << " and " << color2 << "\n";
 
   // Valid arguments for == are: another Color, "XXX", "#XXX", "XXXXXX", or
   // "#XXXXXX"
