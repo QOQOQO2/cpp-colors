@@ -14,7 +14,8 @@ std::istream &operator>>(std::istream &in, Color &rhs) {
                              // string
 
   try {
-    std::vector<double> parsedColors = rhs.hexToDecimal(input);
+    std::vector<double> parsedColors =
+        Color::convertColor(sRGB, lsRGB, rhs.hexToDecimal(input));
     rhs.redChannel = parsedColors.at(0);
     rhs.greenChannel = parsedColors.at(1);
     rhs.blueChannel = parsedColors.at(2);
@@ -78,28 +79,28 @@ int Color::hexCharToDecimal(char c) const {
   if (c <= 'f' && c >= 'a')
     return c - 'a' + 10;
 
-  throw std::invalid_argument("Color Conversion Error: In function "
-                              "hexCharToDecimal, input char is invalid");
+  throw std::invalid_argument("color conversion error: in function "
+                              "hexchartodecimal, input char is invalid");
   return 0;
 }
 
-bool Color::checkRange(double red, double green, double blue) const {
-  if (red < 0 || red > 255) {
+bool Color::checkRangelsRGB(double red, double green, double blue) const {
+  if (red < 0 || red > 1) {
     return false;
   }
-  if (green < 0 || green > 255) {
+  if (green < 0 || green > 1) {
     return false;
   }
-  if (blue < 0 || blue > 255) {
+  if (blue < 0 || blue > 1) {
     return false;
   }
   return true;
 }
 
-bool Color::isBright(int red, int green, int blue) const {
-  // 382 is 255 * 1.5 rounded down which is the same
-  // as checking if the average of the values is greater than 127
-  if (red + green + blue < 382)
+bool Color::isBright(const std::vector<double> &col) const {
+  std::vector<double> temp = col;
+
+  if (temp.at(0) + temp.at(1) + temp.at(2) < 1.5f)
     return false;
   else
     return true;
@@ -109,20 +110,86 @@ inline double Color::averageNumber(double number1, double number2) {
   return (number1 + number2) / 2.0;
 }
 
+/* ---------------------------------- */
+
+double Color::singlesRGBtolsRGB(double sRGB) {
+  double col = sRGB;
+  col /= 255.0;
+  if (col <= 0.04045) {
+    col /= 12.92;
+  } else {
+    col = std::pow((col + 0.055) / 1.055, 2.4);
+  }
+  return col;
+}
+
+double Color::singlelsRGBtosRGB(double lsRGB) {
+  double col = lsRGB;
+
+  if (col <= 0.0031308) {
+    col *= 12.92;
+  } else {
+    col = 1.055 * std::pow(col, 1.0 / 2.4) - 0.055;
+  }
+
+  col *= 255.0;
+
+  return col;
+}
+
+std::vector<double> Color::sRGBtolsRGB(const std::vector<double> &sRGB) {
+  std::vector<double> col = sRGB;
+
+  for (size_t i{0}; i < 3 && i < col.size(); ++i) {
+    col.at(i) /= 255.0;
+
+    if (col.at(i) <= 0.04045) {
+      col.at(i) /= 12.92;
+    } else {
+      col.at(i) = std::pow((col.at(i) + 0.055) / 1.055, 2.4);
+    }
+  }
+
+  return col;
+}
+
+std::vector<double> Color::lsRGBtosRGB(const std::vector<double> &lsRGB) {
+  std::vector<double> col = lsRGB;
+
+  for (size_t i{0}; i < 3 && i < col.size(); ++i) {
+    if (col.at(i) <= 0.0031308) {
+      col.at(i) *= 12.92;
+    } else {
+      col.at(i) = 1.055 * std::pow(col.at(i), 1.0 / 2.4) - 0.055;
+    }
+
+    col.at(i) *= 255.0;
+  }
+
+  return col;
+}
+
+/* ---------------------------------- */
+
 Color::Color() : redChannel{0}, greenChannel{0}, blueChannel{0} {}
 
-Color::Color(const std::vector<double> &colors) {
-  if (colors.size() != 3)
+Color::Color(const std::vector<double> &col) {
+  if (col.size() != 3)
     throw std::invalid_argument("Color Initialization Error: Vector argument "
                                 "does not have exactly 3 inputs");
-  redChannel = colors.at(0);
-  greenChannel = colors.at(1);
-  blueChannel = colors.at(2);
+
+  std::vector<double> temp = convertColor(sRGB, lsRGB, col);
+
+  redChannel = temp.at(0);
+  greenChannel = temp.at(1);
+  blueChannel = temp.at(2);
 }
 
 Color::Color(double red, double green, double blue)
-    : redChannel{red}, greenChannel{green}, blueChannel{blue} {
-  if (!checkRange(red, green, blue)) {
+    : redChannel{singlesRGBtolsRGB(red)},
+      greenChannel{singlesRGBtolsRGB(green)},
+      blueChannel{singlesRGBtolsRGB(blue)} {
+  if (!checkRangelsRGB(redChannel, greenChannel, blueChannel)) {
     throw std::invalid_argument(
         "Color Initialization Error: Channel color out of bounds");
   }
@@ -130,57 +197,49 @@ Color::Color(double red, double green, double blue)
 
 std::string Color::getHexColor() const {
   std::string hexColor{};
-  hexColor = decimalToHex(std::round(redChannel)) +
-             decimalToHex(std::round(greenChannel)) +
-             decimalToHex(std::round(blueChannel));
+  hexColor = decimalToHex(std::round(singlelsRGBtosRGB(redChannel))) +
+             decimalToHex(std::round(singlelsRGBtosRGB(greenChannel))) +
+             decimalToHex(std::round(singlelsRGBtosRGB(blueChannel)));
 
   return hexColor;
 }
 
 std::string Color::getAnsiCode() const {
-  int red = std::round(redChannel);
-  int green = std::round(greenChannel);
-  int blue = std::round(blueChannel);
+  int red = std::round(singlelsRGBtosRGB(redChannel));
+  int green = std::round(singlelsRGBtosRGB(greenChannel));
+  int blue = std::round(singlelsRGBtosRGB(blueChannel));
 
   // give the ansi escape code for rgb background
   std::string backGroundEscapeCode = "\033[48;2;" + std::to_string(red) + ";" +
                                      std::to_string(green) + ";" +
                                      std::to_string(blue) + "m";
 
-  std::string foreGroundEscapeCode = (isBright(red, green, blue))
-                                         ? "\033[38;2;0;0;0m"
-                                         : "\033[38;2;255;255;255m";
+  std::string foreGroundEscapeCode =
+      (isBright({redChannel, greenChannel, blueChannel}))
+          ? "\033[38;2;0;0;0m"
+          : "\033[38;2;255;255;255m";
 
   return foreGroundEscapeCode + backGroundEscapeCode;
 }
 
 std::vector<double> Color::getDecimalColor() const {
-  return {redChannel, greenChannel, blueChannel};
+  return convertColor(lsRGB, sRGB, {redChannel, greenChannel, blueChannel});
 }
 
-bool Color::setColor(double red, double green, double blue) {
-  if (!checkRange(red, green, blue))
-    return false;
-
-  redChannel = red;
-  greenChannel = green;
-  blueChannel = blue;
-  return true;
-}
-
-Color Color::averageColor(
-    const Color &color1,
-    const Color &color2 /*, std::string colorSpace = "srgb" */) {
-  std::vector<double> decimalColor1 = color1.getDecimalColor();
-  std::vector<double> decimalColor2 = color2.getDecimalColor();
+Color Color::averageColor(const Color &color1, const Color &color2,
+                          ColorSpace colorSpace = lsRGB) {
+  std::vector<double> decimalColor1 =
+      convertColor(sRGB, colorSpace, color1.getDecimalColor());
+  std::vector<double> decimalColor2 =
+      convertColor(sRGB, colorSpace, color2.getDecimalColor());
   std::vector<double> averageVector{};
 
-  for (int i{0}; i < 3; ++i) {
+  for (size_t i{0}; i < 3; ++i) {
     averageVector.push_back(
         averageNumber(decimalColor1.at(i), decimalColor2.at(i)));
   }
 
-  Color average{averageVector};
+  Color average{convertColor(colorSpace, sRGB, averageVector)};
   return average;
 }
 
@@ -201,7 +260,8 @@ bool Color::operator==(const char *s) const {
     hexString = hexString.substr(1);
 
   try {
-    std::vector<double> parsedColors = hexToDecimal(hexString);
+    std::vector<double> parsedColors =
+        convertColor(sRGB, lsRGB, hexToDecimal(hexString));
     return (redChannel == parsedColors.at(0) &&
             greenChannel == parsedColors.at(1) &&
             blueChannel == parsedColors.at(2));
@@ -217,4 +277,20 @@ Color &Color::operator=(const char *s) {
 
   *this = Color{hexToDecimal(hexString)};
   return *this;
+}
+
+std::vector<double> Color::convertColor(ColorSpace from, ColorSpace to,
+                                        const std::vector<double> &values) {
+  // FIX: make this work with more colorspaces with the from and to variables
+  if (from == to)
+    return values;
+  if (from == sRGB) {
+    return sRGBtolsRGB(values);
+  } else if (from == lsRGB) {
+    return lsRGBtosRGB(values);
+  } else {
+    throw std::invalid_argument("Color Conversion Error: The from and/or to "
+                                "values in convertColor function is invalid");
+    return values;
+  }
 }

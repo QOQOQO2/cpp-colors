@@ -23,7 +23,7 @@ int main() {
   std::cout << "Enter another color: #";
   std::cin >> color2;
 
-  // Valid arguments for == is another Color, "XXX", "#XXX", "XXXXXX", or
+  // Valid arguments for == are: another Color, "XXX", "#XXX", "XXXXXX", or
   // "#XXXXXX"
   if (color1 == color2)
     std::cout << "You entered the same color\n";
@@ -34,7 +34,23 @@ int main() {
   if (color2 == "#000000")
     std::cout << "Your second color is black\n";
 
-  // + uses standard sRGB and returns another Color type
+  // + uses linear sRGB and returns another Color type
   std::cout << color1 << " + " << color2 << " = " << color1 + color2 << "\n";
+
+  // You can also specify which color space to use for averaging with the
+  // averageColor function
+  std::cout << color1 << " + " << color2 << " = "
+            << Color::averageColor(color1, color2, sRGB) << " in sRGB\n";
+
+  // You can convert colors into different formats
+  std::vector<double> linearColor =
+      Color::convertColor(sRGB, lsRGB, color1.getDecimalColor());
+
+  std::cout << color1 << " in linear sRGB is " << color1.getAnsiCode();
+  std::cout << linearColor.at(0) << " ";
+  std::cout << linearColor.at(1) << " ";
+  std::cout << linearColor.at(2);
+  std::cout << Color::resetAnsiCode << "\n";
+
   return 0;
 }
