@@ -1,9 +1,7 @@
 #ifndef COLOR_H
 #define COLOR_H
 
-#include <cmath>
-#include <iostream>
-#include <stdexcept>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
@@ -34,10 +32,8 @@ class Color {
   friend std::istream &operator>>(std::istream &in, Color &rhs);
 
 private:
-  // Define the variables for the hex color
-  double redChannel{};
-  double greenChannel{};
-  double blueChannel{};
+  // Define the variables for lsRGB format
+  double redChannel, greenChannel, blueChannel;
 
   std::string decimalToHex(int decimal) const;
   std::vector<double> hexToDecimal(const std::string &hex) const;
@@ -45,6 +41,7 @@ private:
   bool checkRangelsRGB(double red, double green, double blue) const;
   bool isBright(const std::vector<double> &col) const;
   inline static double averageNumber(double number1, double number2);
+  inline static double lerp(double number1, double number2, double t);
 
   /* ----- Color conversions ------ */
   static double singlesRGBtolsRGB(double sRGB);
@@ -65,7 +62,9 @@ public:
   std::vector<double> getDecimalColor() const;
 
   static Color averageColor(const Color &color1, const Color &color2,
-                            ColorSpace colorSpace);
+                            ColorSpace colorSpace = lsRGB);
+  static Color lerpColor(const Color &color1, const Color &color2, double t,
+                         ColorSpace colorSpace = lsRGB);
   Color operator+(const Color &rhs) const;
   bool operator==(const Color &rhs) const; // Check equivalance to another color
   bool operator==(const char *s) const;    // Check equivalance to a c-string

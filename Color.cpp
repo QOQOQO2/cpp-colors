@@ -1,4 +1,7 @@
 #include "Color.h"
+#include <cmath>
+#include <iostream>
+#include <stdexcept>
 
 std::ostream &operator<<(std::ostream &os, const Color &rhs) {
   os << rhs.getAnsiCode() << "#" << rhs.getHexColor() << Color::resetAnsiCode;
@@ -80,7 +83,7 @@ int Color::hexCharToDecimal(char c) const {
     return c - 'a' + 10;
 
   throw std::invalid_argument("color conversion error: in function "
-                              "hexchartodecimal, input char is invalid");
+                              "hexCharToDecimal, input char is invalid");
   return 0;
 }
 
@@ -108,6 +111,10 @@ bool Color::isBright(const std::vector<double> &col) const {
 
 inline double Color::averageNumber(double number1, double number2) {
   return (number1 + number2) / 2.0;
+}
+
+inline double Color::lerp(double number1, double number2, double t) {
+  return (1 - t) * number1 + t * number2;
 }
 
 /* ---------------------------------- */
@@ -215,7 +222,7 @@ std::string Color::getAnsiCode() const {
                                      std::to_string(blue) + "m";
 
   std::string foreGroundEscapeCode =
-      (isBright({redChannel, greenChannel, blueChannel}))
+      (isBright(lsRGBtosRGB({redChannel, greenChannel, blueChannel})))
           ? "\033[38;2;0;0;0m"
           : "\033[38;2;255;255;255m";
 
@@ -227,7 +234,7 @@ std::vector<double> Color::getDecimalColor() const {
 }
 
 Color Color::averageColor(const Color &color1, const Color &color2,
-                          ColorSpace colorSpace = lsRGB) {
+                          ColorSpace colorSpace) {
   std::vector<double> decimalColor1 =
       convertColor(sRGB, colorSpace, color1.getDecimalColor());
   std::vector<double> decimalColor2 =
@@ -241,6 +248,27 @@ Color Color::averageColor(const Color &color1, const Color &color2,
 
   Color average{convertColor(colorSpace, sRGB, averageVector)};
   return average;
+}
+
+Color Color::lerpColor(const Color &color1, const Color &color2, double t,
+                       ColorSpace colorSpace) {
+  if (t < 0 || t > 1) {
+    throw std::invalid_argument(
+        "Color Manipulation Error: t value of lerp is invalid");
+    return {};
+  }
+  std::vector<double> decimalColor1 =
+      convertColor(lsRGB, colorSpace, color1.getDecimalColor());
+  std::vector<double> decimalColor2 =
+      convertColor(lsRGB, colorSpace, color2.getDecimalColor());
+  std::vector<double> lerpVector{};
+
+  for (size_t i{0}; i < 3; ++i) {
+    lerpVector.push_back(lerp(decimalColor1.at(i), decimalColor2.at(i), t));
+  }
+
+  Color temp{convertColor(colorSpace, lsRGB, lerpVector)};
+  return temp;
 }
 
 Color Color::operator+(const Color &rhs) const {

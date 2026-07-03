@@ -54,5 +54,12 @@ int main() {
   std::cout << linearColor.at(2);
   std::cout << Color::resetAnsiCode << "\n";
 
+  std::cout << "Enter the t value to lerp " << color1 << " and " << color2
+            << ": ";
+  double t{};
+  std::cin >> t;
+  std::cout << "The lerped color is " << Color::lerpColor(color1, color2, t)
+            << "\n";
+
   return 0;
 }
