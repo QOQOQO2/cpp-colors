@@ -12,10 +12,6 @@ std::istream &operator>>(std::istream &in, Color &rhs) {
   std::string input{};
   in >> input;
 
-  if (!input.empty() && input.at(0) == '#')
-    input = input.substr(1); // Check if the user put a # in front of the
-                             // string
-
   try {
     std::vector<double> parsedColors =
         Color::convertColor(sRGB, lsRGB, rhs.hexToDecimal(input));
@@ -47,28 +43,32 @@ std::string Color::decimalToHex(int decimal) const {
 }
 
 std::vector<double> Color::hexToDecimal(const std::string &hex) const {
-  if (hex.size() != 6 && hex.size() != 3)
+  std::string hexString{hex};
+  if (!hexString.empty() && hexString.at(0) == '#')
+    hexString = hexString.substr(1);
+
+  if (hexString.size() != 6 && hexString.size() != 3)
     return {0, 0, 0};
 
   double red{};
   double green{};
   double blue{};
 
-  if (hex.size() == 6) {
+  if (hexString.size() == 6) {
     // clang-format off
-    red   =  hexCharToDecimal(hex.at(0)) * 16;
-    red   += hexCharToDecimal(hex.at(1));
-    green =  hexCharToDecimal(hex.at(2)) * 16;
-    green += hexCharToDecimal(hex.at(3));
-    blue  =  hexCharToDecimal(hex.at(4)) * 16;
-    blue  += hexCharToDecimal(hex.at(5));
+    red   =  hexCharToDecimal(hexString.at(0)) * 16;
+    red   += hexCharToDecimal(hexString.at(1));
+    green =  hexCharToDecimal(hexString.at(2)) * 16;
+    green += hexCharToDecimal(hexString.at(3));
+    blue  =  hexCharToDecimal(hexString.at(4)) * 16;
+    blue  += hexCharToDecimal(hexString.at(5));
     // clang-format on
   } else {
     // its 17 because 11 in hex is 17 in decimal
     // clang-format off
-    red   = hexCharToDecimal(hex.at(0)) * 17;
-    green = hexCharToDecimal(hex.at(1)) * 17;
-    blue  = hexCharToDecimal(hex.at(2)) * 17;
+    red   = hexCharToDecimal(hexString.at(0)) * 17;
+    green = hexCharToDecimal(hexString.at(1)) * 17;
+    blue  = hexCharToDecimal(hexString.at(2)) * 17;
     // clang-format on
   }
   return {red, green, blue};
@@ -103,7 +103,7 @@ bool Color::checkRangelsRGB(double red, double green, double blue) const {
 bool Color::isBright(const std::vector<double> &col) const {
   std::vector<double> temp = col;
 
-  if (temp.at(0) + temp.at(1) + temp.at(2) < 1.5f)
+  if (temp.at(0) + temp.at(1) + temp.at(2) < 382)
     return false;
   else
     return true;
@@ -217,9 +217,9 @@ std::vector<double> Color::HSVtolsRGB(const std::vector<double> &HSV) {
 }
 
 std::vector<double> Color::lsRGBtoHSV(const std::vector<double> &lsRGB) {
-  double r = clamp(singlelsRGBtosRGB(lsRGB.at(0)) / 255.0);
-  double g = clamp(singlelsRGBtosRGB(lsRGB.at(1)) / 255.0);
-  double b = clamp(singlelsRGBtosRGB(lsRGB.at(2)) / 255.0);
+  double r = singlelsRGBtosRGB(clamp(lsRGB.at(0))) / 255.0;
+  double g = singlelsRGBtosRGB(clamp(lsRGB.at(1))) / 255.0;
+  double b = singlelsRGBtosRGB(clamp(lsRGB.at(2))) / 255.0;
 
   double mx = r;
   if (g > mx)
@@ -267,9 +267,9 @@ std::vector<double> Color::CMYKtolsRGB(const std::vector<double> &CMYK) {
 }
 
 std::vector<double> Color::lsRGBtoCMYK(const std::vector<double> &lsRGB) {
-  double r = clamp(singlelsRGBtosRGB(lsRGB.at(0)) / 255.0);
-  double g = clamp(singlelsRGBtosRGB(lsRGB.at(1)) / 255.0);
-  double b = clamp(singlelsRGBtosRGB(lsRGB.at(2)) / 255.0);
+  double r = singlelsRGBtosRGB(clamp(lsRGB.at(0))) / 255.0;
+  double g = singlelsRGBtosRGB(clamp(lsRGB.at(1))) / 255.0;
+  double b = singlelsRGBtosRGB(clamp(lsRGB.at(2))) / 255.0;
 
   double k = 0;
   if (r >= g && r >= b)
@@ -291,16 +291,128 @@ std::vector<double> Color::lsRGBtoCMYK(const std::vector<double> &lsRGB) {
   return {c, m, y, k};
 }
 
+std::vector<double> Color::OklabtolsRGB(const std::vector<double> &Oklab) {
+  double L = Oklab.at(0);
+  double A = Oklab.at(1);
+  double B = Oklab.at(2);
+  double l = 0;
+  double m = 0;
+  double s = 0;
+  double r = 0;
+  double g = 0;
+  double b = 0;
+
+  // clang-format off
+  static constexpr double invoklab[3][3]{
+    {1, 0.3963377774, 0.2158037573},
+    {1, -0.1055613458, -0.0638541728},
+    {1, -0.0894841775, -1.2914855480}};
+
+  static constexpr double invlms[3][3]{
+    {4.0767416621, -3.3077115913, 0.2309699292},
+    {-1.2684380046, 2.6097574011, -0.3413193965},
+    {-0.0041960863, -0.7034186147, 1.7076147010}};
+  // clang-format on
+
+  l = (L) + (invoklab[0][1] * A) + (invoklab[0][2] * B);
+  m = (L) + (invoklab[1][1] * A) + (invoklab[1][2] * B);
+  s = (L) + (invoklab[2][1] * A) + (invoklab[2][2] * B);
+
+  l = l * l * l;
+  m = m * m * m;
+  s = s * s * s;
+
+  r = (invlms[0][0] * l) + (invlms[0][1] * m) + (invlms[0][2] * s);
+  g = (invlms[1][0] * l) + (invlms[1][1] * m) + (invlms[1][2] * s);
+  b = (invlms[2][0] * l) + (invlms[2][1] * m) + (invlms[2][2] * s);
+
+  return {clamp(r), clamp(g), clamp(b)};
+}
+
+std::vector<double> Color::lsRGBtoOklab(const std::vector<double> &lsRGB) {
+  double r = lsRGB.at(0);
+  double g = lsRGB.at(1);
+  double b = lsRGB.at(2);
+  double l = 0;
+  double m = 0;
+  double s = 0;
+  double L = 0;
+  double A = 0;
+  double B = 0;
+
+  // clang-format off
+  static constexpr double lms[3][3]{
+    {0.4122214708, 0.5363325363, 0.0514459929},
+    {0.2119034982, 0.6806995451, 0.1073969566},
+    {0.0883024619, 0.2817188376, 0.6299787005}};
+
+  static constexpr double oklab[3][3]{
+    {0.2104542553,  0.7936177850, -0.0040720468},
+    {1.9779984951, -2.4285922050,  0.4505937099},
+    {0.0259040371,  0.7827717662, -0.8086757660}};
+  // clang-format on
+
+  l = (lms[0][0] * r) + (lms[0][1] * g) + (lms[0][2] * b);
+  m = (lms[1][0] * r) + (lms[1][1] * g) + (lms[1][2] * b);
+  s = (lms[2][0] * r) + (lms[2][1] * g) + (lms[2][2] * b);
+
+  l = std::cbrt(l);
+  m = std::cbrt(m);
+  s = std::cbrt(s);
+
+  L = (oklab[0][0] * l) + (oklab[0][1] * m) + (oklab[0][2] * s);
+  A = (oklab[1][0] * l) + (oklab[1][1] * m) + (oklab[1][2] * s);
+  B = (oklab[2][0] * l) + (oklab[2][1] * m) + (oklab[2][2] * s);
+
+  return {L, A, B};
+}
+
+std::vector<double> Color::OklchtolsRGB(const std::vector<double> &Oklch) {
+  double l = Oklch.at(0);
+  double C = Oklch.at(1);
+  double h = Oklch.at(2);
+
+  h *= PI / 180;
+
+  double a = C * std::cos(h);
+  double b = C * std::sin(h);
+
+  return OklabtolsRGB({l, a, b});
+}
+
+std::vector<double> Color::lsRGBtoOklch(const std::vector<double> &lsRGB) {
+  std::vector<double> Oklab = lsRGBtoOklab(lsRGB);
+
+  double l = Oklab.at(0);
+  double a = Oklab.at(1);
+  double b = Oklab.at(2);
+
+  double C = std::sqrt(a * a + b * b);
+  double h = std::atan2(b, a);
+
+  h *= 180 / PI;
+  if (h < 0) {
+    h += 360;
+  }
+
+  return {l, C, h};
+}
+
 /* ---------------------------------- */
 
 Color::Color() : redChannel{0}, greenChannel{0}, blueChannel{0} {}
 
-Color::Color(const std::vector<double> &col) {
-  if (col.size() != 3)
-    throw std::invalid_argument("Color Initialization Error: Vector argument "
-                                "does not have exactly 3 inputs");
+Color::Color(const std::vector<double> &col, ColorSpace colorSpace) {
 
-  std::vector<double> temp = convertColor(sRGB, lsRGB, col);
+  if (colorSpace != CMYK && col.size() != 3)
+    throw std::length_error(
+        "Color Initialization Error: Input vector size is invalid");
+
+  if (colorSpace == CMYK && col.size() == 4)
+    throw std::length_error(
+        "Color Initialization Error: Input vector size is invalid");
+
+  std::vector<double> temp = convertColor(colorSpace, lsRGB, col);
 
   redChannel = temp.at(0);
   greenChannel = temp.at(1);
@@ -316,6 +428,8 @@ Color::Color(double red, double green, double blue)
         "Color Initialization Error: Channel color out of bounds");
   }
 }
+
+Color::Color(const char *s) : Color(hexToDecimal(s), sRGB) {}
 
 std::string Color::getHexColor() const {
   std::string hexColor{};
@@ -348,46 +462,102 @@ std::vector<double> Color::getDecimalColor() const {
   return convertColor(lsRGB, sRGB, {redChannel, greenChannel, blueChannel});
 }
 
+std::vector<double> Color::getlsRGBColor() const {
+  return {redChannel, greenChannel, blueChannel};
+}
+
 Color Color::averageColor(const Color &color1, const Color &color2,
                           ColorSpace colorSpace) {
+
+  if (colorSpace == HSV || colorSpace == Oklch)
+    throw std::domain_error("Color Manipulation Error: not allowed to average "
+                            "cylindrical color spaces (e.g. HSV)");
+
   std::vector<double> decimalColor1 =
-      convertColor(sRGB, colorSpace, color1.getDecimalColor());
+      convertColor(lsRGB, colorSpace, color1.getlsRGBColor());
   std::vector<double> decimalColor2 =
-      convertColor(sRGB, colorSpace, color2.getDecimalColor());
+      convertColor(lsRGB, colorSpace, color2.getlsRGBColor());
   std::vector<double> averageVector{};
 
-  for (size_t i{0}; i < 3; ++i) {
+  for (size_t i{0}; i < decimalColor1.size(); ++i) {
     averageVector.push_back(
         averageNumber(decimalColor1.at(i), decimalColor2.at(i)));
   }
 
-  Color average{convertColor(colorSpace, sRGB, averageVector)};
-  return average;
+  return Color{averageVector, colorSpace};
 }
 
 Color Color::lerpColor(const Color &color1, const Color &color2, double t,
                        ColorSpace colorSpace) {
   if (t < 0 || t > 1) {
-    throw std::invalid_argument(
+    throw std::out_of_range(
         "Color Manipulation Error: t value of lerp is invalid");
-    return {};
   }
   std::vector<double> decimalColor1 =
-      convertColor(sRGB, colorSpace, color1.getDecimalColor());
+      convertColor(lsRGB, colorSpace, color1.getlsRGBColor());
   std::vector<double> decimalColor2 =
-      convertColor(sRGB, colorSpace, color2.getDecimalColor());
+      convertColor(lsRGB, colorSpace, color2.getlsRGBColor());
   std::vector<double> lerpVector{};
 
-  for (size_t i{0}; i < 3; ++i) {
+  for (size_t i{0}; i < decimalColor1.size(); ++i) {
     lerpVector.push_back(lerp(decimalColor1.at(i), decimalColor2.at(i), t));
   }
 
-  Color temp{convertColor(colorSpace, sRGB, lerpVector)};
-  return temp;
+  return Color{lerpVector, colorSpace};
+}
+
+Color Color::invertColor(const Color &color, ColorSpace colorSpace) {
+  std::vector<double> colorValues =
+      convertColor(lsRGB, colorSpace, color.getlsRGBColor());
+
+  switch (colorSpace) {
+  case lsRGB:
+    colorValues.at(0) = 1 - colorValues.at(0);
+    colorValues.at(1) = 1 - colorValues.at(1);
+    colorValues.at(2) = 1 - colorValues.at(2);
+    break;
+
+  case sRGB:
+    colorValues.at(0) = 255 - colorValues.at(0);
+    colorValues.at(1) = 255 - colorValues.at(1);
+    colorValues.at(2) = 255 - colorValues.at(2);
+    break;
+
+  case CMYK:
+    colorValues.at(0) = 1 - colorValues.at(0);
+    colorValues.at(1) = 1 - colorValues.at(1);
+    colorValues.at(2) = 1 - colorValues.at(2);
+    colorValues.at(3) = 1 - colorValues.at(3);
+    break;
+
+  case Oklab:
+    // colorValues.at(0) = 1 - colorValues.at(0);
+    colorValues.at(1) = -colorValues.at(1);
+    colorValues.at(2) = -colorValues.at(2);
+    break;
+
+  case HSV:
+    colorValues.at(0) = std::fmod(colorValues.at(0) + 180, 360);
+    colorValues.at(1) = 1 - colorValues.at(1);
+    // colorValues.at(2) = 1 - colorValues.at(2);
+    break;
+
+  case Oklch:
+    colorValues.at(0) = 1 - colorValues.at(0);
+    // colorValues.at(1) = 1 - colorValues.at(1);
+    colorValues.at(2) = std::fmod(colorValues.at(2) + 180, 360);
+    break;
+  }
+
+  return Color{colorValues, colorSpace};
 }
 
 Color Color::operator+(const Color &rhs) const {
-  return Color::averageColor(*this, rhs);
+  return Color::averageColor(*this, rhs, defaultAverageColorSpace);
+}
+
+Color Color::operator-() const {
+  return Color::invertColor(*this, defaultAverageColorSpace);
 }
 
 bool Color::operator==(const Color &rhs) const {
@@ -398,13 +568,9 @@ bool Color::operator==(const Color &rhs) const {
 }
 
 bool Color::operator==(const char *s) const {
-  std::string hexString(s);
-  if (!hexString.empty() && hexString.at(0) == '#')
-    hexString = hexString.substr(1);
-
   try {
     std::vector<double> parsedColors =
-        convertColor(sRGB, lsRGB, hexToDecimal(hexString));
+        convertColor(sRGB, lsRGB, hexToDecimal(s));
     return (redChannel == parsedColors.at(0) &&
             greenChannel == parsedColors.at(1) &&
             blueChannel == parsedColors.at(2));
@@ -414,11 +580,7 @@ bool Color::operator==(const char *s) const {
 }
 
 Color &Color::operator=(const char *s) {
-  std::string hexString(s);
-  if (!hexString.empty() && hexString.at(0) == '#')
-    hexString = hexString.substr(1);
-
-  *this = Color{hexToDecimal(hexString)};
+  *this = Color{hexToDecimal(s)};
   return *this;
 }
 
@@ -441,9 +603,11 @@ std::vector<double> Color::convertColor(ColorSpace from, ColorSpace to,
 
 const std::map<ColorSpace, Color::HubConverters> Color::registry = {
     // clang-format off
-  { ColorSpace::lsRGB, { [](const auto& v) { return v; },     [](const auto& v) { return v; } } },
-  { ColorSpace::sRGB,  { Color::sRGBtolsRGB,                Color::lsRGBtosRGB } },
-  { ColorSpace::HSV,   { Color::HSVtolsRGB,                 Color::lsRGBtoHSV } },
-  { ColorSpace::CMYK,  { Color::CMYKtolsRGB,                Color::lsRGBtoCMYK} }
+  { ColorSpace::lsRGB, { [](const auto& v) { return v; }, [](const auto& v) { return v; } } },
+  { ColorSpace::sRGB,  { Color::sRGBtolsRGB,  Color::lsRGBtosRGB } },
+  { ColorSpace::HSV,   { Color::HSVtolsRGB,   Color::lsRGBtoHSV } },
+  { ColorSpace::CMYK,  { Color::CMYKtolsRGB,  Color::lsRGBtoCMYK} },
+  { ColorSpace::Oklab, { Color::OklabtolsRGB, Color::lsRGBtoOklab } },
+  { ColorSpace::Oklch, { Color::OklchtolsRGB, Color::lsRGBtoOklch} }
     // clang-format on
 };

@@ -37,26 +37,33 @@ int main() {
   if (color2 == "#000000")
     std::cout << "Your second color is black\n";
 
-  // + uses linear sRGB and returns another Color type
+  // + uses linear sRGB unless you change it and returns another Color type
   std::cout << color1 << " + " << color2 << " = " << color1 + color2 << "\n";
 
   // You can also specify which color space to use for averaging with the
   // averageColor() function
   std::cout << color1 << " + " << color2 << " = "
-            << Color::averageColor(color1, color2, sRGB) << " in sRGB\n\n";
+            << Color::averageColor(color1, color2, sRGB) << " in sRGB\n";
+
+  // You can change what the default color space that averageColor, lerpColor,
+  // invertColor, operator+, and operator+ uses by changing
+  // defaultAverageColorSpace
+  Color::defaultAverageColorSpace = Oklab;
+  std::cout << color1 << " + " << color2 << " = " << color1 + color2
+            << " in Oklab\n\n";
 
   // You can convert colors into different formats
   // getDecimalColor() return the format in sRGB
   std::vector<double> linearColor =
       Color::convertColor(sRGB, lsRGB, color1.getDecimalColor());
 
-  std::vector<double> hsvColor =
-      Color::convertColor(sRGB, HSV, color1.getDecimalColor());
+  std::vector<double> oklabColor =
+      Color::convertColor(sRGB, Oklab, color2.getDecimalColor());
 
-  std::vector<double> cmykColor =
-      Color::convertColor(sRGB, CMYK, color1.getDecimalColor());
+  std::vector<double> oklchColor =
+      Color::convertColor(sRGB, Oklch, color2.getDecimalColor());
 
-  std::cout << std::fixed << std::setprecision(2);
+  std::cout << std::fixed << std::setprecision(3);
 
   std::cout << color1 << " in linear sRGB is " << color1.getAnsiCode();
   std::cout << linearColor.at(0) << " ";
@@ -64,17 +71,16 @@ int main() {
   std::cout << linearColor.at(2);
   std::cout << Color::resetAnsiCode << "\n\n";
 
-  std::cout << color1 << " in HSV is " << color1.getAnsiCode();
-  std::cout << hsvColor.at(0) << "H ";
-  std::cout << hsvColor.at(1) << "S ";
-  std::cout << hsvColor.at(2) << "V";
+  std::cout << color2 << " in Oklab is " << color2.getAnsiCode();
+  std::cout << oklabColor.at(0) << "l ";
+  std::cout << oklabColor.at(1) << "a ";
+  std::cout << oklabColor.at(2) << "b";
   std::cout << Color::resetAnsiCode << "\n\n";
 
-  std::cout << color1 << " in CMYK is " << color1.getAnsiCode();
-  std::cout << cmykColor.at(0) << "C ";
-  std::cout << cmykColor.at(1) << "M ";
-  std::cout << cmykColor.at(2) << "Y ";
-  std::cout << cmykColor.at(3) << "K ";
+  std::cout << color2 << " in Oklch is " << color2.getAnsiCode();
+  std::cout << oklchColor.at(0) << "l ";
+  std::cout << oklchColor.at(1) << "C ";
+  std::cout << oklchColor.at(2) << "h";
   std::cout << Color::resetAnsiCode << "\n\n";
 
   // You can lerp between colors
@@ -83,7 +89,12 @@ int main() {
   double t{};
   std::cin >> t;
   std::cout << "The lerped color is " << Color::lerpColor(color1, color2, t)
-            << "\n";
+            << "\n\n";
+
+  // Invert colors
+  std::cout << color1 << " inverted is " << -color1 << " in Oklab\n";
+  std::cout << color2 << " inverted is " << Color::invertColor(color2, HSV)
+            << " in hsv\n";
 
   return 0;
 }
