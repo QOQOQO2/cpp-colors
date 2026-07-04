@@ -1,7 +1,9 @@
 #ifndef COLOR_H
 #define COLOR_H
 
+#include <functional>
 #include <iosfwd>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -17,11 +19,11 @@
 6. TODO: add a operator-() function to invert the color
 
  NOTE: colorspaces to add:
-  linear srgb (lsrgb)
-  srgb
+  linear srgb (lsrgb) ✓
+  srgb ✓
   oklab
   oklch
-  hsv
+  hsv ✓
   cmyk
 */
 
@@ -42,13 +44,25 @@ private:
   bool isBright(const std::vector<double> &col) const;
   inline static double averageNumber(double number1, double number2);
   inline static double lerp(double number1, double number2, double t);
+  inline static double clamp(double value);
 
   /* ----- Color conversions ------ */
   static double singlesRGBtolsRGB(double sRGB);
   static double singlelsRGBtosRGB(double lsRGB);
 
   static std::vector<double> sRGBtolsRGB(const std::vector<double> &sRGB);
-  static std::vector<double> lsRGBtosRGB(const std::vector<double> &sRGB);
+  static std::vector<double> lsRGBtosRGB(const std::vector<double> &lsRGB);
+  static std::vector<double> HSVtolsRGB(const std::vector<double> &HSV);
+  static std::vector<double> lsRGBtoHSV(const std::vector<double> &lsRGB);
+  static std::vector<double> CMYKtolsRGB(const std::vector<double> &CMYK);
+  static std::vector<double> lsRGBtoCMYK(const std::vector<double> &lsRGB);
+
+  struct HubConverters {
+    std::function<std::vector<double>(const std::vector<double> &)> toHub;
+    std::function<std::vector<double>(const std::vector<double> &)> fromHub;
+  };
+
+  static const std::map<ColorSpace, HubConverters> registry;
 
 public:
   inline static const std::string resetAnsiCode{"\033[0m"};
