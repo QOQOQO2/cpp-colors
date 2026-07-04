@@ -10,12 +10,11 @@
 // https://github.com/QOQOQO2/cpp-colors
 
 /* -- todo board --
-   TODO: ✓ add conversions to different colorspaces
-   NOTE: havent added other colorspaces yet, only srgb and lsrgb
-2. TODO: add averaging for the different colorspaces
+1. TODO: ✓ add conversions to different colorspaces
+2. TODO: ✓ add averaging for the different colorspaces
 3. TODO: add << support for the different colorspaces
 4. TODO: add a alpha channel
-   TODO: ✓ change how you store the colors into linear srgb from 0 to 1 instead
+5. TODO: ✓ change how you store the colors into linear srgb from 0 to 1 instead
 6. TODO: add a operator-() function to invert the color
 
  NOTE: colorspaces to add:
@@ -24,7 +23,7 @@
   oklab
   oklch
   hsv ✓
-  cmyk
+  cmyk ✓
 */
 
 enum ColorSpace { lsRGB, sRGB, Oklab, Oklch, HSV, CMYK };
