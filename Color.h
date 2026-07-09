@@ -13,9 +13,8 @@
 1. TODO: ✓ add conversions to different colorspaces
 2. TODO: ✓ add averaging for the different colorspaces
 3. TODO: add << support for the different colorspaces
-
-5. TODO: ✓ change how you store the colors into linear srgb from 0 to 1 instead
-6. TODO: add a operator-() function to invert the color
+4. TODO: ✓ change how you store the colors into linear srgb from 0 to 1 instead
+5. TODO: ✓ add a operator-() function to invert the color
 */
 
 enum ColorSpace { lsRGB, sRGB, Oklab, Oklch, HSV, CMYK };
@@ -34,9 +33,15 @@ private:
   int hexCharToDecimal(char c) const;
   bool checkRangelsRGB(double red, double green, double blue) const;
   bool isBright(const std::vector<double> &col) const;
-  inline static double averageNumber(double number1, double number2);
-  inline static double lerp(double number1, double number2, double t);
-  inline static double clamp(double value);
+  inline static double averageNumber(double a, double b) {
+    return (a + b) / 2.0;
+  }
+  inline static double lerp(double a, double b, double t) {
+    return (1 - t) * a + t * b;
+  }
+  inline static double clamp(double x) {
+    return (x >= 1) ? 1 : ((x <= 0) ? 0 : x);
+  }
 
   /* ----- Color conversions ------ */
   static double singlesRGBtolsRGB(double sRGB);

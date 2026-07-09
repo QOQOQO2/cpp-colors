@@ -109,23 +109,6 @@ bool Color::isBright(const std::vector<double> &col) const {
     return true;
 }
 
-inline double Color::averageNumber(double number1, double number2) {
-  return (number1 + number2) / 2.0;
-}
-
-inline double Color::lerp(double number1, double number2, double t) {
-  return (1 - t) * number1 + t * number2;
-}
-
-inline double Color::clamp(double value) {
-  if (value >= 1)
-    return 1;
-  else if (value <= 0)
-    return 0;
-  else
-    return value;
-}
-
 /* ---------------------------------- */
 
 double Color::singlesRGBtolsRGB(double sRGB) {
@@ -408,7 +391,7 @@ Color::Color(const std::vector<double> &col, ColorSpace colorSpace) {
     throw std::length_error(
         "Color Initialization Error: Input vector size is invalid");
 
-  if (colorSpace == CMYK && col.size() == 4)
+  if (colorSpace == CMYK && col.size() != 4)
     throw std::length_error(
         "Color Initialization Error: Input vector size is invalid");
 
@@ -489,10 +472,14 @@ Color Color::averageColor(const Color &color1, const Color &color2,
 
 Color Color::lerpColor(const Color &color1, const Color &color2, double t,
                        ColorSpace colorSpace) {
-  if (t < 0 || t > 1) {
+  if (t < 0 || t > 1)
     throw std::out_of_range(
         "Color Manipulation Error: t value of lerp is invalid");
-  }
+
+  if (colorSpace == HSV || colorSpace == Oklch)
+    throw std::domain_error("Color Manipulation Error: not allowed to lerp "
+                            "cylindrical color spaces (e.g. HSV)");
+
   std::vector<double> decimalColor1 =
       convertColor(lsRGB, colorSpace, color1.getlsRGBColor());
   std::vector<double> decimalColor2 =
@@ -509,6 +496,9 @@ Color Color::lerpColor(const Color &color1, const Color &color2, double t,
 Color Color::invertColor(const Color &color, ColorSpace colorSpace) {
   std::vector<double> colorValues =
       convertColor(lsRGB, colorSpace, color.getlsRGBColor());
+
+  // NOTE: Oklab and Oklch will result in the same color
+  // NOTE: sRGB, HSV, and CMYK will result in the same color
 
   switch (colorSpace) {
   case lsRGB:
@@ -527,24 +517,18 @@ Color Color::invertColor(const Color &color, ColorSpace colorSpace) {
     colorValues.at(0) = 1 - colorValues.at(0);
     colorValues.at(1) = 1 - colorValues.at(1);
     colorValues.at(2) = 1 - colorValues.at(2);
-    colorValues.at(3) = 1 - colorValues.at(3);
     break;
 
   case Oklab:
-    // colorValues.at(0) = 1 - colorValues.at(0);
     colorValues.at(1) = -colorValues.at(1);
     colorValues.at(2) = -colorValues.at(2);
     break;
 
   case HSV:
     colorValues.at(0) = std::fmod(colorValues.at(0) + 180, 360);
-    colorValues.at(1) = 1 - colorValues.at(1);
-    // colorValues.at(2) = 1 - colorValues.at(2);
     break;
 
   case Oklch:
-    colorValues.at(0) = 1 - colorValues.at(0);
-    // colorValues.at(1) = 1 - colorValues.at(1);
     colorValues.at(2) = std::fmod(colorValues.at(2) + 180, 360);
     break;
   }
