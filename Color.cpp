@@ -1,6 +1,7 @@
 #include "Color.h"
 #include <cmath>
-#include <iostream>
+#include <istream>
+#include <ostream>
 #include <stdexcept>
 
 std::ostream &operator<<(std::ostream &os, const Color &rhs) {
