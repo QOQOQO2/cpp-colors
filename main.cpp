@@ -2,6 +2,9 @@
 #include <iomanip>
 #include <iostream>
 
+// Everything is in the namespace clr
+using namespace clr;
+
 int main() {
   // Color test{300, 0, 0}; // This will throw a std::invalid_argument error
   Color color1, color2;
@@ -44,6 +47,7 @@ int main() {
   // You can also specify which color space to use for averaging with the
   // averageColor() function
   // you cannot use cylindrical color spaces like hsv for averaging and lerping
+  // The colorspaces are enums named ColorSpace
   std::cout << color1 << " + " << color2 << " = "
             << Color::averageColor(color1, color2, sRGB) << " in sRGB\n";
 

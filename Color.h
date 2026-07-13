@@ -17,6 +17,7 @@
 5. TODO: ✓ add a operator-() function to invert the color
 */
 
+namespace clr {
 enum ColorSpace { lsRGB, sRGB, Oklab, Oklch, HSV, CMYK };
 
 class Color {
@@ -78,7 +79,6 @@ public:
   std::string getAnsiCode() const;
   std::vector<double> getDecimalColor() const;
   std::vector<double> getlsRGBColor() const;
-  // TODO: change some stuff to use this to optimize stuff
 
   static Color averageColor(const Color &color1, const Color &color2,
                             ColorSpace colorSpace = defaultAverageColorSpace);
@@ -95,5 +95,6 @@ public:
   static std::vector<double> convertColor(ColorSpace from, ColorSpace to,
                                           const std::vector<double> &values);
 };
+} // namespace clr
 
 #endif // COLOR_H
