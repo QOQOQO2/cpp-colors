@@ -4,6 +4,8 @@
 #include <ostream>
 #include <stdexcept>
 
+namespace clr {
+
 std::ostream &operator<<(std::ostream &os, const Color &rhs) {
   os << rhs.getAnsiCode() << "#" << rhs.getHexColor() << Color::resetAnsiCode;
   return os;
@@ -596,3 +598,5 @@ const std::map<ColorSpace, Color::HubConverters> Color::registry = {
   { ColorSpace::Oklch, { Color::OklchtolsRGB, Color::lsRGBtoOklch} }
     // clang-format on
 };
+
+} // namespace clr
